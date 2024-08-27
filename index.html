@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>The Resistance</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+        <style>
+            body {
+                font-family: monospace;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .player {
+                /* display: inline-block; */
+                margin: 10px;
+                padding: 10px;
+                border: 1px solid #ccc;
+                cursor: pointer;
+            }
+            .player.selected {
+                background-color: #e0e0e0;
+            }
+            .mission {
+                display: inline-block;
+                margin: 20px 0;
+                padding: 10px;
+                border: 1px solid #ccc;
+            }
+            button {
+                margin: 5px;
+                padding: 5px 10px;
+            }
+            .role-reveal {
+                text-align: center;
+                font-size: 24px;
+                margin: 20px 0;
+            }
+            .input-group {
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <h1>The Resistance</h1>
+
+            <div v-if="gamePhase === 'setup'">
+                <h2>Game Setup</h2>
+                <label
+                    >Number of Players:
+                    <input
+                        v-model.number="playerCount"
+                        type="number"
+                        min="5"
+                        max="10"
+                        @change="generatePlayerInputs"
+                    />
+                </label>
+                <div
+                    v-for="(player, index) in players"
+                    :key="index"
+                    class="input-group"
+                >
+                    <label
+                        >Player {{ index + 1 }} Name:
+                        <input
+                            v-model="player.name"
+                            type="text"
+                            :placeholder="'Player ' + (index + 1)"
+                        />
+                    </label>
+                </div>
+                <button @click="startRoleReveal" :disabled="!allPlayersNamed">
+                    Start Role Reveal
+                </button>
+            </div>
+
+            <div v-if="gamePhase === 'role-reveal'">
+                <div class="role-reveal">
+                    <h2>
+                        {{ currentPlayer.name }}, it's your turn to see your
+                        role
+                    </h2>
+                    <p v-if="!roleRevealed">
+                        Click the button when you're ready to see your role
+                    </p>
+                    <button v-if="!roleRevealed" @click="revealRole">
+                        Reveal Role
+                    </button>
+                    <p v-if="roleRevealed">
+                        Your role is: <strong>{{ currentPlayer.role }}</strong>
+                    </p>
+                    <button v-if="roleRevealed" @click="nextPlayer">
+                        I've seen my role (Pass to next player)
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="gamePhase === 'team-selection'">
+                <h2>Team Selection (Round {{ currentRound }})</h2>
+                <p>Current Leader: {{ players[currentLeader].name }}</p>
+                <div class="players">
+                    <div
+                        v-for="(player, index) in players"
+                        :key="index"
+                        class="player"
+                        :class="{ selected: selectedTeam.includes(index) }"
+                        @click="togglePlayerSelection(index)"
+                    >
+                        {{ player.name }}
+                    </div>
+                </div>
+                <button
+                    @click="proposeTeam"
+                    :disabled="selectedTeam.length !== missionSizes[currentRound - 1]"
+                >
+                    Propose Team
+                </button>
+            </div>
+
+            <div v-if="gamePhase === 'team-voting'">
+                <h2>Vote on Proposed Team</h2>
+                <p>
+                    Proposed Team: {{ selectedTeam.map(i =>
+                    players[i].name).join(', ') }}
+                </p>
+                <button @click="voteForTeam(true)">Approve</button>
+                <button @click="voteForTeam(false)">Reject</button>
+            </div>
+
+            <div v-if="gamePhase === 'mission'">
+                <h2>Mission {{ currentRound }}</h2>
+                <p>
+                    Team: {{ selectedTeam.map(i => players[i].name).join(', ')
+                    }}
+                </p>
+                <div v-for="(player, index) in players" :key="index">
+                    <div v-if="selectedTeam.includes(index)">
+                        {{ player.name }}:
+                        <button @click="missionVote(index, true)">
+                            Success
+                        </button>
+                        <button
+                            v-if="player.role === 'Spy'"
+                            @click="missionVote(index, false)"
+                        >
+                            Fail
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="gamePhase === 'game-over'">
+                <h2>Game Over</h2>
+                <p>{{ gameResult }}</p>
+                <button @click="resetGame">Play Again</button>
+            </div>
+
+            <div
+                class="mission-results"
+                v-if="gamePhase !== 'setup' && gamePhase !== 'role-reveal' && gamePhase !== 'team-voting' && gamePhase !== 'mission'"
+            >
+                <h3>Mission Results:</h3>
+                <div
+                    v-for="(result, index) in missionResults"
+                    :key="index"
+                    class="mission"
+                >
+                    Mission {{ index + 1 }}: {{ result === null ? 'Pending' :
+                    (result ? 'Success' : 'Fail') }}
+                </div>
+                <h3>Consecutive Rejections: {{ consecutiveRejections }}</h3>
+            </div>
+        </div>
+
+        <script>
+            new Vue({
+                el: "#app",
+                data: {
+                    gamePhase: "setup",
+                    // player.name: "player",
+                    playerCount: 5,
+                    players: [],
+                    currentPlayerIndex: 0,
+                    roleRevealed: false,
+                    currentLeader: 0,
+                    currentRound: 1,
+                    consecutiveRejections: 0,
+                    selectedTeam: [],
+                    missionSizes: [2, 3, 2, 3, 3], // for 5 players
+                    missionResults: [null, null, null, null, null],
+                    gameResult: "",
+                    teamVotes: 0,
+                    missionVotes: {
+                        success: 0,
+                        fail: 0,
+                    },
+                },
+                computed: {
+                    allPlayersNamed() {
+                        return this.players.every(
+                            (player) => player.name.trim() !== "",
+                        );
+                    },
+                    currentPlayer() {
+                        return this.players[this.currentPlayerIndex];
+                    },
+                },
+                methods: {
+                    generatePlayerInputs() {
+                        this.players = Array(this.playerCount)
+                            .fill()
+                            .map((_, i) => ({ name: "", role: "" }));
+                    },
+                    startRoleReveal() {
+                        const spyCount = Math.ceil(this.playerCount / 3);
+                        const roles = Array(spyCount)
+                            .fill("Spy")
+                            .concat(
+                                Array(this.playerCount - spyCount).fill(
+                                    "Resistance",
+                                ),
+                            );
+                        for (let i = roles.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [roles[i], roles[j]] = [roles[j], roles[i]];
+                        }
+                        this.players.forEach(
+                            (player, index) => (player.role = roles[index]),
+                        );
+                        this.gamePhase = "role-reveal";
+                        this.currentPlayerIndex = 0;
+                        this.roleRevealed = false;
+                    },
+                    revealRole() {
+                        this.roleRevealed = true;
+                    },
+                    nextPlayer() {
+                        this.currentPlayerIndex++;
+                        this.roleRevealed = false;
+                        if (this.currentPlayerIndex >= this.players.length) {
+                            this.startGame();
+                        }
+                    },
+                    startGame() {
+                        this.gamePhase = "team-selection";
+                        this.currentLeader = Math.floor(
+                            Math.random() * this.playerCount,
+                        );
+                    },
+                    togglePlayerSelection(index) {
+                        if (this.selectedTeam.includes(index)) {
+                            this.selectedTeam = this.selectedTeam.filter(
+                                (i) => i !== index,
+                            );
+                        } else if (
+                            this.selectedTeam.length <
+                            this.missionSizes[this.currentRound - 1]
+                        ) {
+                            this.selectedTeam.push(index);
+                        }
+                    },
+                    proposeTeam() {
+                        this.gamePhase = "team-voting";
+                        this.teamVotes = 0;
+                    },
+                    voteForTeam(approve) {
+                        if (approve) {
+                            this.consecutiveRejections = 0;
+                            this.gamePhase = "mission";
+                            this.missionVotes = { success: 0, fail: 0 };
+                        } else {
+                            this.consecutiveRejections++;
+                            if (this.consecutiveRejections === 5) {
+                                this.gamePhase = "team-selection";
+                                this.gameOver("Spies win!");
+                            }
+                            this.nextLeader();
+                        }
+                    },
+                    missionVote(playerIndex, success) {
+                        if (success) {
+                            this.missionVotes.success++;
+                        } else {
+                            this.missionVotes.fail++;
+                        }
+                        if (
+                            this.missionVotes.success +
+                                this.missionVotes.fail ===
+                            this.selectedTeam.length
+                        ) {
+                            this.resolveMission();
+                        }
+                    },
+                    resolveMission() {
+                        const missionSuccess = this.missionVotes.fail === 0;
+                        this.missionResults[this.currentRound - 1] =
+                            missionSuccess;
+                        if (this.missionResults.filter(Boolean).length === 3) {
+                            this.gameOver("Resistance wins!");
+                        } else if (
+                            this.missionResults.filter(
+                                (result) => result === false,
+                            ).length === 3
+                        ) {
+                            this.gameOver("Spies win!");
+                        } else {
+                            this.nextRound();
+                        }
+                    },
+                    nextLeader() {
+                        this.currentLeader =
+                            (this.currentLeader + 1) % this.playerCount;
+                        this.gamePhase = "team-selection";
+                        this.selectedTeam = [];
+                    },
+                    nextRound() {
+                        this.currentRound++;
+                        this.nextLeader();
+                    },
+                    gameOver(result) {
+                        this.gameResult = result;
+                        this.gamePhase = "game-over";
+                    },
+                    resetGame() {
+                        Object.assign(this.$data, this.$options.data());
+                        this.generatePlayerInputs();
+                    },
+                },
+                mounted() {
+                    this.generatePlayerInputs();
+                },
+            });
+        </script>
+    </body>
+</html>
