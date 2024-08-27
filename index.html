@@ -100,13 +100,13 @@
 
             <div v-if="gamePhase === 'team-selection'">
                 <h2>Team Selection (Round {{ currentRound }})</h2>
-                <p>Current Leader: {{ players[currentLeader].name }}</p>
+                <p>Current Leader: {{ players[currentLeader].name }}. Select <strong>{{ missionSizes[currentRound-1]}}</strong>:</p>
                 <div class="players">
                     <div
                         v-for="(player, index) in players"
                         :key="index"
                         class="player"
-                        :class="{ selected: selectedTeam.includes(index) }"
+                        :class="{ selected: missionPlayers.includes(index) }"
                         @click="togglePlayerSelection(index)"
                     >
                         {{ player.name }}
@@ -114,7 +114,7 @@
                 </div>
                 <button
                     @click="proposeTeam"
-                    :disabled="selectedTeam.length !== missionSizes[currentRound - 1]"
+                    :disabled="missionPlayers.length !== missionSizes[currentRound - 1]"
                 >
                     Propose Team
                 </button>
@@ -123,7 +123,7 @@
             <div v-if="gamePhase === 'team-voting'">
                 <h2>Vote on Proposed Team</h2>
                 <p>
-                    Proposed Team: {{ selectedTeam.map(i =>
+                    Proposed Team: {{ missionPlayers.map(i =>
                     players[i].name).join(', ') }}
                 </p>
                 <button @click="voteForTeam(true)">Approve</button>
@@ -133,23 +133,16 @@
             <div v-if="gamePhase === 'mission'">
                 <h2>Mission {{ currentRound }}</h2>
                 <p>
-                    Team: {{ selectedTeam.map(i => players[i].name).join(', ')
+                    Team: {{ missionPlayers.map(i => players[i].name).join(', ')
                     }}
                 </p>
-                <div v-for="(player, index) in players" :key="index">
-                    <div v-if="selectedTeam.includes(index)">
-                        {{ player.name }}:
-                        <button @click="missionVote(index, true)">
-                            Success
-                        </button>
-                        <button
-                            v-if="player.role === 'Spy'"
-                            @click="missionVote(index, false)"
-                        >
-                            Fail
-                        </button>
-                    </div>
-                </div>
+                <h2>
+                    {{ players[missionPlayers[currentMissionPlayerIndex]].name }}, It's your turn:
+                </h2>
+                <button @click="missionVote(missionPlayers[currentMissionPlayerIndex], true)">
+                    Pass
+                </button>
+                <button @click="missionVote(missionPlayers[currentMissionPlayerIndex], false)">Fail</button>
             </div>
 
             <div v-if="gamePhase === 'game-over'">
@@ -158,10 +151,7 @@
                 <button @click="resetGame">Play Again</button>
             </div>
 
-            <div
-                class="mission-results"
-                v-if="gamePhase !== 'setup' && gamePhase !== 'role-reveal' && gamePhase !== 'team-voting' && gamePhase !== 'mission'"
-            >
+            <div class="mission-results" v-if="gamePhase === 'team-selection'">
                 <h3>Mission Results:</h3>
                 <div
                     v-for="(result, index) in missionResults"
@@ -171,7 +161,7 @@
                     Mission {{ index + 1 }}: {{ result === null ? 'Pending' :
                     (result ? 'Success' : 'Fail') }}
                 </div>
-                <h3>Consecutive Rejections: {{ consecutiveRejections }}</h3>
+                <h3>Consecutive Rejections: {{ consecutiveRejections }} / {{ maxConsecutiveRejections }}</h3>
             </div>
         </div>
 
@@ -180,23 +170,26 @@
                 el: "#app",
                 data: {
                     gamePhase: "setup",
-                    // player.name: "player",
                     playerCount: 5,
-                    players: [],
+                    players: [], // {name: "player", role: "Spy"}
                     currentPlayerIndex: 0,
                     roleRevealed: false,
                     currentLeader: 0,
                     currentRound: 1,
                     consecutiveRejections: 0,
-                    selectedTeam: [],
+                    maxConsecutiveRejections: 5,
                     missionSizes: [2, 3, 2, 3, 3], // for 5 players
                     missionResults: [null, null, null, null, null],
+                    missionPlayers: [], // current mission players
+                    currentMissionPlayerIndex: 0,
+                    pastMissionPlayers: [],
+                    missionActionDone: false,
                     gameResult: "",
-                    teamVotes: 0,
                     missionVotes: {
                         success: 0,
                         fail: 0,
                     },
+                    pastMissionVotes: [],
                 },
                 computed: {
                     allPlayersNamed() {
@@ -207,12 +200,21 @@
                     currentPlayer() {
                         return this.players[this.currentPlayerIndex];
                     },
+                    currentMissionPlayer() {
+                        return this.missionPlayers[
+                            this.currentMissionPlayerIndex
+                        ];
+                    },
                 },
                 methods: {
                     generatePlayerInputs() {
                         this.players = Array(this.playerCount)
                             .fill()
-                            .map((_, i) => ({ name: "", role: "" }));
+                            .map((_, i) => ({
+                                // TODO: change to blank names when depolying
+                                name: `Player ${i + 1}`,
+                                role: "",
+                            }));
                     },
                     startRoleReveal() {
                         const spyCount = Math.ceil(this.playerCount / 3);
@@ -251,20 +253,19 @@
                         );
                     },
                     togglePlayerSelection(index) {
-                        if (this.selectedTeam.includes(index)) {
-                            this.selectedTeam = this.selectedTeam.filter(
+                        if (this.missionPlayers.includes(index)) {
+                            this.missionPlayers = this.missionPlayers.filter(
                                 (i) => i !== index,
                             );
                         } else if (
-                            this.selectedTeam.length <
+                            this.missionPlayers.length <
                             this.missionSizes[this.currentRound - 1]
                         ) {
-                            this.selectedTeam.push(index);
+                            this.missionPlayers.push(index);
                         }
                     },
                     proposeTeam() {
                         this.gamePhase = "team-voting";
-                        this.teamVotes = 0;
                     },
                     voteForTeam(approve) {
                         if (approve) {
@@ -273,14 +274,17 @@
                             this.missionVotes = { success: 0, fail: 0 };
                         } else {
                             this.consecutiveRejections++;
-                            if (this.consecutiveRejections === 5) {
-                                this.gamePhase = "team-selection";
+                            if (this.consecutiveRejections === this.maxConsecutiveRejections) {
                                 this.gameOver("Spies win!");
+                                return
                             }
                             this.nextLeader();
                         }
                     },
                     missionVote(playerIndex, success) {
+                        const isSpy = this.players[playerIndex].role === "Spy";
+                        const isResistance = !isSpy;
+                        success = isResistance ? true : success;
                         if (success) {
                             this.missionVotes.success++;
                         } else {
@@ -289,13 +293,18 @@
                         if (
                             this.missionVotes.success +
                                 this.missionVotes.fail ===
-                            this.selectedTeam.length
+                            this.missionPlayers.length
                         ) {
                             this.resolveMission();
                         }
+                        else {
+                            this.currentMissionPlayerIndex++;
+                        }
                     },
                     resolveMission() {
+                        this.pastMissionVotes.push(structuredClone(this.missionVotes));
                         const missionSuccess = this.missionVotes.fail === 0;
+                        this.currentMissionPlayerIndex = 0;
                         this.missionResults[this.currentRound - 1] =
                             missionSuccess;
                         if (this.missionResults.filter(Boolean).length === 3) {
@@ -314,7 +323,9 @@
                         this.currentLeader =
                             (this.currentLeader + 1) % this.playerCount;
                         this.gamePhase = "team-selection";
-                        this.selectedTeam = [];
+                        this.pastMissionPlayers.push(
+                            this.missionPlayers.slice());
+                        this.missionPlayers = [];
                     },
                     nextRound() {
                         this.currentRound++;
@@ -326,6 +337,7 @@
                     },
                     resetGame() {
                         Object.assign(this.$data, this.$options.data());
+                        this.gamePhase = "setup";
                         this.generatePlayerInputs();
                     },
                 },
