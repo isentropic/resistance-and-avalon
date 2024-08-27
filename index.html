@@ -253,6 +253,8 @@
                             10: 4,
                         };
                         this.spiesCount = spiesCount[num_players];
+                        this.playerCount = num_players;
+
                         const specialRounds = {
                             5: false,
                             6: false,
@@ -319,6 +321,8 @@
                             this.consecutiveRejections = 0;
                             this.gamePhase = "mission";
                             this.missionVotes = { success: 0, fail: 0 };
+                            console.log("Current mission players:");
+                            console.log(this.missionPlayers);
                         } else {
                             this.consecutiveRejections++;
                             if (this.consecutiveRejections === this.maxConsecutiveRejections) {
@@ -351,10 +355,9 @@
                     resolveMission() {
                         this.pastMissionVotes.push(structuredClone(this.missionVotes));
 
+                        const missionSuccess = this.missionVotes.fail === 0;
                         if (this.currentRound === 4 && this.forthSpecialRound ) {
-                            const missionSuccess = this.missionVotes.fail <= 1;
-                        } else {
-                            const missionSuccess = this.missionVotes.fail === 0;
+                            missionSuccess = this.missionVotes.fail <= 1;
                         }
 
                         this.currentMissionPlayerIndex = 0;
