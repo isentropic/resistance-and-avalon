@@ -36,6 +36,16 @@
                 align-items: center; /* Vertically center */
                 border: 3px solid #ccc;
                 text-align: center;
+                font-size: 24px;
+            }
+            .mission-pending {
+                background-color: lightgray;
+            }
+            .mission-fail {
+                background-color: tomato; 
+            }
+            .mission-pass {
+                background-color: lightgreen;
             }
             button {
                 margin: 5px;
@@ -89,8 +99,7 @@
             <div v-if="gamePhase === 'role-reveal'">
                 <div class="role-reveal">
                     <h2>
-                        {{ currentPlayer.name }}, it's your turn to see your
-                        role
+                        {{ currentPlayer.name }}
                     </h2>
                     <p v-if="!roleRevealed">
                         Click the button when you're ready to see your role
@@ -100,9 +109,12 @@
                     </button>
                     <p v-if="roleRevealed">
                         Your role is: <strong>{{ currentPlayer.role }}</strong>
-                    <!-- <p v-if=> -->
-                    <!-- </p> -->
                     </p>
+                        
+                    <p v-if="currentPlayer.role === 'Spy' && roleRevealed">
+                        Other spies are: <strong>{{ otherPlayers.map(player => player.name).join(', ') }}</strong>
+                    </p>
+
                     <button v-if="roleRevealed" @click="nextPlayer">
                         I've seen my role (Pass to next player)
                     </button>
@@ -110,8 +122,8 @@
             </div>
 
             <div v-if="gamePhase === 'team-selection'">
-                <h2>Mission {{ currentRound }}</h2>
-                <p>Leader: <strong>{{ players[currentLeader].name }}</strong>. Select <strong>{{ missionSizes[currentRound-1]}}</strong>:</p>
+                <p>Mission {{ currentRound }}</p>
+                <h3>Leader: <strong>{{ players[currentLeader].name }}</strong>. Select <strong>{{ missionSizes[currentRound-1]}}</strong>:</h3>
                 <div class="players">
                     <div
                         v-for="(player, index) in players"
@@ -150,10 +162,10 @@
                 <h2>
                     {{ players[missionPlayers[currentMissionPlayerIndex]].name }}, It's your turn:
                 </h2>
-                <button @click="missionVote(missionPlayers[currentMissionPlayerIndex], true)">
+                <button @click="missionVote(currentMissionPlayer, true)">
                     Pass
                 </button>
-                <button @click="missionVote(missionPlayers[currentMissionPlayerIndex], false)">Fail</button>
+                <button @click="missionVote(currentMissionPlayer, false)">Fail</button>
             </div>
 
             <div v-if="gamePhase === 'game-over'">
@@ -168,10 +180,14 @@
                     <div
                         v-for="(result, index) in missionResults"
                         :key="index"
+                        :class="{
+                            'mission-pending': result === null,
+                            'mission-fail': result === false,
+                            'mission-pass': result === true,
+                        }"
                         class="mission"
                     >
                         <strong>{{missionSizes[index]}} </strong>  <strong> {{ ((index === 3) && forthSpecialRound) ? "*" : ""}}</strong>
-                        <!-- {{ result === null ? 'Pending' : (result ? 'Success' : 'Fail') }} -->
                     </div>
                 </div>
                 <h3>Consecutive Rejections: {{ consecutiveRejections }} / {{ maxConsecutiveRejections }}</h3>
@@ -187,6 +203,7 @@
                     spiesCount: 2,
                     forthSpecialRound: false,
                     players: [], // {name: "player", role: "Spy"}
+                    otherPlayers: [],
                     currentPlayerIndex: 0,
                     roleRevealed: false,
                     currentLeader: 0,
@@ -271,7 +288,7 @@
                             .fill("Spy")
                             .concat(
                                 Array(this.playerCount - spyCount).fill(
-                                    "Resistance",
+                                    "Good Guy",
                                 ),
                             );
                         for (let i = roles.length - 1; i > 0; i--) {
@@ -287,6 +304,13 @@
                     },
                     revealRole() {
                         this.roleRevealed = true;
+                        this.otherRoles();
+                    },
+                    otherRoles(){
+                        const isSpy = this.players[this.currentPlayerIndex].role === "Spy";
+                        const otherSpies = this.players.filter(player => player.role === "Spy" && player !== this.players[this.currentPlayerIndex]);
+                        console.log(otherSpies);
+                        this.otherPlayers = otherSpies;
                     },
                     nextPlayer() {
                         this.currentPlayerIndex++;
@@ -355,7 +379,7 @@
                     resolveMission() {
                         this.pastMissionVotes.push(structuredClone(this.missionVotes));
 
-                        const missionSuccess = this.missionVotes.fail === 0;
+                        let missionSuccess = this.missionVotes.fail === 0;
                         if (this.currentRound === 4 && this.forthSpecialRound ) {
                             missionSuccess = this.missionVotes.fail <= 1;
                         }
@@ -364,7 +388,7 @@
                         this.missionResults[this.currentRound - 1] =
                             missionSuccess;
                         if (this.missionResults.filter(Boolean).length === 3) {
-                            this.gameOver("Resistance wins!");
+                            this.gameOver("Good guys wins!");
                         } else if (
                             this.missionResults.filter(
                                 (result) => result === false,
@@ -386,6 +410,7 @@
                     nextRound() {
                         this.currentRound++;
                         this.nextLeader();
+                        console.log(this.pastMissionVotes);
                     },
                     gameOver(result) {
                         this.gameResult = result;
