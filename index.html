@@ -91,6 +91,26 @@
                         />
                     </label>
                 </div>
+                <!-- special roles: merlin, mordred, lovers, checkboxes -->
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" v-model="merlin" />
+                        Merlin, Percival, Morgana
+                    </label><br>
+                    <label>
+                        <input type="checkbox" v-model="mordred" />
+                        Mordred
+                    </label>
+                    <label><br>
+                        <input type="checkbox" v-model="lovers" />
+                        Lovers
+                    </label><br>
+                    <label>
+                        <input type="checkbox" v-model="oberon" />
+                        Oberon
+                    </label>
+                </div>
+
                 <button @click="startRoleReveal" :disabled="!allPlayersNamed">
                     Start Role Reveal
                 </button>
@@ -201,8 +221,12 @@
                     gamePhase: "setup",
                     playerCount: 5,
                     spiesCount: 2,
+                    merlin: false,
+                    mordred: false,
+                    lovers: false,
+                    oberon: false,
                     forthSpecialRound: false,
-                    players: [], // {name: "player", role: "Spy"}
+                    players: [], // {name: "player", role: "Spy", subrole: "Merlin"}
                     otherPlayers: [],
                     currentPlayerIndex: 0,
                     roleRevealed: false,
@@ -225,9 +249,27 @@
                 },
                 computed: {
                     allPlayersNamed() {
-                        return this.players.every(
+                        let all_names_present = this.players.every(
                             (player) => player.name.trim() !== "",
                         );
+                        // return all_names_present;
+                        // check if there is enough player for merlin mordred lovers
+                        let enough_roles = true;
+                        let special_spies = 0;
+                        if (this.mordred) {
+                            special_spies++;
+                        };
+                        if (this.merlin) {
+                            special_spies++;
+                            special_spies++;
+                        };
+                        if (this.oberon) {
+                            special_spies++;
+                        };
+                        if (special_spies > this.spiesCount) {
+                            enough_roles = false;
+                        };
+                        return all_names_present && enough_roles;
                     },
                     currentPlayer() {
                         return this.players[this.currentPlayerIndex];
@@ -261,7 +303,6 @@
                     },
                     setMissionSizes() {
                         const num_players = this.players.length;
-                        console.log(num_players);
                         const missionSizes = {
                             5: [2, 3, 2, 3, 3] ,
                             6: [2, 3, 4, 3, 4] ,
@@ -293,20 +334,55 @@
                         this.forthSpecialRound = specialRounds[num_players];
                     },
                     startRoleReveal() {
-                        const spyCount = this.spiesCount;
-                        const roles = Array(spyCount)
-                            .fill("Spy")
-                            .concat(
-                                Array(this.playerCount - spyCount).fill(
-                                    "Good Guy",
-                                ),
-                            );
+                        let spyCount = this.spiesCount;
+                        let goodGuyCount = this.playerCount - spyCount;
+
+                        let roles = [];
+                        if (this.merlin ) {
+                            spyCount--;
+                            spyCount--;
+                            goodGuyCount--;
+                            goodGuyCount--;
+                            roles.push({"role": "Spy", "speciality": "Morgana"});
+                            roles.push({"role": "Spy", "speciality": "Assassin"});
+
+                            roles.push({"role": "Good Guy", "speciality": "Merlin"});
+                            roles.push({"role": "Good Guy", "speciality": "Percival"});
+                        };
+                        if (this.mordred) {
+                            spyCount--;
+                            roles.push({"role": "Spy", "speciality": "Mordred"});
+                        };
+                        if (this.lovers ){
+                            goodGuyCount--;
+                            goodGuyCount--;
+                            roles.push({"role": "Good Guy", "speciality": "Lover"});
+                            roles.push({"role": "Good Guy", "speciality": "Lover"});
+                        };
+                        if (this.oberon){
+                            spyCount--;
+                            roles.push({"role": "Spy", "speciality": "Oberon"});
+                        };
+
+                        // ordinary bad, ordinary good
+                        for (let i = 0; i < spyCount; i++) {
+                            roles.push({"role": "Spy", "speciality": ""});
+                        };
+                        for (let i = 0; i < goodGuyCount; i++) {
+                            roles.push({"role": "Good Guy", "speciality": ""});
+                        };
+
+                        // shuffle
                         for (let i = roles.length - 1; i > 0; i--) {
                             const j = Math.floor(Math.random() * (i + 1));
                             [roles[i], roles[j]] = [roles[j], roles[i]];
-                        }
+                        };
+
                         this.players.forEach(
-                            (player, index) => (player.role = roles[index]),
+                            (player, index) => {
+                                player.role = roles[index].role; 
+                                player.speciality=roles[index].speciality 
+                            }
                         );
                         this.gamePhase = "role-reveal";
                         this.currentPlayerIndex = 0;
