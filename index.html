@@ -22,11 +22,20 @@
             .player.selected {
                 background-color: #e0e0e0;
             }
-            .mission {
-                display: inline-block;
-                margin: 20px 0;
+            .mission-results-container {
+                display: flex;
+                justify-content: space-between;
                 padding: 10px;
-                border: 1px solid #ccc;
+            }
+            .mission {
+                display: flex; /* Make each item a flex container */
+                width: 100px;
+                height: 100px;
+                /* background-color: lightcoral; */
+                justify-content: center; /* Horizontally center */
+                align-items: center; /* Vertically center */
+                border: 3px solid #ccc;
+                text-align: center;
             }
             button {
                 margin: 5px;
@@ -91,6 +100,8 @@
                     </button>
                     <p v-if="roleRevealed">
                         Your role is: <strong>{{ currentPlayer.role }}</strong>
+                    <!-- <p v-if=> -->
+                    <!-- </p> -->
                     </p>
                     <button v-if="roleRevealed" @click="nextPlayer">
                         I've seen my role (Pass to next player)
@@ -99,8 +110,8 @@
             </div>
 
             <div v-if="gamePhase === 'team-selection'">
-                <h2>Team Selection (Round {{ currentRound }})</h2>
-                <p>Current Leader: {{ players[currentLeader].name }}. Select <strong>{{ missionSizes[currentRound-1]}}</strong>:</p>
+                <h2>Mission {{ currentRound }}</h2>
+                <p>Leader: <strong>{{ players[currentLeader].name }}</strong>. Select <strong>{{ missionSizes[currentRound-1]}}</strong>:</p>
                 <div class="players">
                     <div
                         v-for="(player, index) in players"
@@ -153,13 +164,15 @@
 
             <div class="mission-results" v-if="gamePhase === 'team-selection'">
                 <h3>Mission Results:</h3>
-                <div
-                    v-for="(result, index) in missionResults"
-                    :key="index"
-                    class="mission"
-                >
-                    Mission {{ index + 1 }}: {{ result === null ? 'Pending' :
-                    (result ? 'Success' : 'Fail') }}
+                <div class="mission-results-container">
+                    <div
+                        v-for="(result, index) in missionResults"
+                        :key="index"
+                        class="mission"
+                    >
+                        <strong>{{missionSizes[index]}} </strong>  <strong> {{ ((index === 3) && forthSpecialRound) ? "*" : ""}}</strong>
+                        <!-- {{ result === null ? 'Pending' : (result ? 'Success' : 'Fail') }} -->
+                    </div>
                 </div>
                 <h3>Consecutive Rejections: {{ consecutiveRejections }} / {{ maxConsecutiveRejections }}</h3>
             </div>
@@ -171,6 +184,8 @@
                 data: {
                     gamePhase: "setup",
                     playerCount: 5,
+                    spiesCount: 2,
+                    forthSpecialRound: false,
                     players: [], // {name: "player", role: "Spy"}
                     currentPlayerIndex: 0,
                     roleRevealed: false,
@@ -215,9 +230,41 @@
                                 name: `Player ${i + 1}`,
                                 role: "",
                             }));
+                        this.setMissionSizes();
+                    },
+                    setMissionSizes() {
+                        const num_players = this.players.length;
+                        console.log(num_players);
+                        const missionSizes = {
+                            5: [2, 3, 2, 3, 3] ,
+                            6: [2, 3, 4, 3, 4] ,
+                            7: [2, 3, 3, 4, 4] ,
+                            8: [3, 4, 4, 5, 5] ,
+                            9: [3, 4, 4, 5, 5] ,
+                            10: [3, 4, 4, 5, 5],
+                        };
+                        this.missionSizes = missionSizes[num_players];
+                        const spiesCount = {
+                            5: 2,
+                            6: 2, 
+                            7: 3,
+                            8: 3,
+                            9: 3,
+                            10: 4,
+                        };
+                        this.spiesCount = spiesCount[num_players];
+                        const specialRounds = {
+                            5: false,
+                            6: false,
+                            7: true,
+                            8: true,
+                            9: true,
+                            10:true,
+                        }
+                        this.forthSpecialRound = specialRounds[num_players];
                     },
                     startRoleReveal() {
-                        const spyCount = Math.ceil(this.playerCount / 3);
+                        const spyCount = this.spiesCount;
                         const roles = Array(spyCount)
                             .fill("Spy")
                             .concat(
@@ -303,7 +350,13 @@
                     },
                     resolveMission() {
                         this.pastMissionVotes.push(structuredClone(this.missionVotes));
-                        const missionSuccess = this.missionVotes.fail === 0;
+
+                        if (this.currentRound === 4 && this.forthSpecialRound ) {
+                            const missionSuccess = this.missionVotes.fail <= 1;
+                        } else {
+                            const missionSuccess = this.missionVotes.fail === 0;
+                        }
+
                         this.currentMissionPlayerIndex = 0;
                         this.missionResults[this.currentRound - 1] =
                             missionSuccess;
