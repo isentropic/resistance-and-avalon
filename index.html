@@ -124,17 +124,11 @@
                     <p v-if="!roleRevealed">
                         Click the button when you're ready to see your role
                     </p>
+                    <p v-if="roleRevealed" v-html="roleHint"></p>
+
                     <button v-if="!roleRevealed" @click="revealRole">
                         Reveal Role
                     </button>
-                    <p v-if="roleRevealed">
-                        Your role is: <strong>{{ currentPlayer.role }}</strong>
-                    </p>
-                        
-                    <p v-if="currentPlayer.role === 'Spy' && roleRevealed">
-                        Other spies are: <strong>{{ otherPlayers.map(player => player.name).join(', ') }}</strong>
-                    </p>
-
                     <button v-if="roleRevealed" @click="nextPlayer">
                         I've seen my role (Pass to next player)
                     </button>
@@ -227,7 +221,7 @@
                     oberon: false,
                     forthSpecialRound: false,
                     players: [], // {name: "player", role: "Spy", subrole: "Merlin"}
-                    otherPlayers: [],
+                    roleHint: "",
                     currentPlayerIndex: 0,
                     roleRevealed: false,
                     currentLeader: 0,
@@ -393,10 +387,30 @@
                         this.otherRoles();
                     },
                     otherRoles(){
-                        const isSpy = this.players[this.currentPlayerIndex].role === "Spy";
-                        const otherSpies = this.players.filter(player => player.role === "Spy" && player !== this.players[this.currentPlayerIndex]);
-                        console.log(otherSpies);
-                        this.otherPlayers = otherSpies;
+                        let isSpy = this.currentPlayer.role === "Spy";
+                        let otherSpies = this.players.filter(player => player.role === "Spy" && player !== this.currentPlayer && player.speciality !== "Oberon");
+                        let visibleSpies = this.players.filter(player => player.role === "Spy" && player !== this.currentPlayer && (player.speciality !== "Mordred" || player.speciality !== "Oberon"));
+                        let merlinAndMorgana = this.players.filter(player => player.speciality === "Merlin" || player.speciality === "Morgana");
+                        let otherLover = this.players.filter(player => player.speciality === "Lover" && player !== this.currentPlayer);
+                        
+                        let displayRole = this.currentPlayer.speciality === "" ? this.currentPlayer.role : this.currentPlayer.speciality;
+                        let roleHint = "Your role is: <strong>" + displayRole + "</strong>";
+
+                        let secondaryHint = ""
+                        if (this.currentPlayer.speciality === "Lover") {
+                            secondaryHint = "<br>Other lover is: <strong>" + otherLover[0].name + "</strong>";
+                        }  
+                        if (this.currentPlayer.speciality === "Merlin") {
+                            secondaryHint = "<br>Spies are: <strong>" + visibleSpies.map(player => player.name).join(", ") + "</strong>";
+                        }  
+                        if (this.currentPlayer.speciality === "Percival") {
+                            secondaryHint = "<br>Merlin and Morgana are: <strong>" + merlinAndMorgana.map(player => player.name).join(", ") + "</strong>";
+                        }
+                        if (this.currentPlayer.role == "Spy") {
+                            secondaryHint = "<br>Other Spies are: <strong>" + otherSpies.map(player => player.name).join(", ") + "</strong>";
+                        }
+
+                        this.roleHint = roleHint + secondaryHint;
                     },
                     nextPlayer() {
                         this.currentPlayerIndex++;
@@ -431,8 +445,6 @@
                             this.consecutiveRejections = 0;
                             this.gamePhase = "mission";
                             this.missionVotes = { success: 0, fail: 0 };
-                            console.log("Current mission players:");
-                            console.log(this.missionPlayers);
                         } else {
                             this.consecutiveRejections++;
                             if (this.consecutiveRejections === this.maxConsecutiveRejections) {
@@ -496,7 +508,6 @@
                     nextRound() {
                         this.currentRound++;
                         this.nextLeader();
-                        console.log(this.pastMissionVotes);
                     },
                     gameOver(result) {
                         this.gameResult = result;
