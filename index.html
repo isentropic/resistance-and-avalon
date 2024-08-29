@@ -28,6 +28,15 @@
                 background-color: #fff;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
+            .players-role-revealed {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                max-width: 600px;
+                line-height: 1.6;
+                font-size: 1em
+            }
             .player.selected {
                 background-color: #e0e0e0;
             }
@@ -364,7 +373,7 @@
             <div v-if="gamePhase === 'game-over'">
                 <h1>{{ gameResult }}</h1>
                 <!-- display all roles -->
-                <div class="players">
+                <div class="players-role-revealed">
                     <div
                         v-for="(player, index) in players"
                     >
