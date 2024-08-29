@@ -31,7 +31,6 @@
                 display: flex; /* Make each item a flex container */
                 width: 100px;
                 height: 100px;
-                /* background-color: lightcoral; */
                 justify-content: center; /* Horizontally center */
                 align-items: center; /* Vertically center */
                 /* border: 3px solid #ccc; */
@@ -57,6 +56,7 @@
                 margin: 20px 0;
             }
             .input-group {
+                margin-top: 10px;
                 margin-bottom: 10px;
             }
         </style>
@@ -183,7 +183,58 @@
             </div>
 
             <div v-if="gamePhase === 'choose-merlin'">
-                <button @click="resetGame">Play Again</button>
+                <h3>Assassin, choose Merlin:</h3>
+                <div class="players">
+                    <div
+                        v-for="(player, index) in players"
+                        v-if="player.role === 'Good Guy'"
+                        :key="index"
+                        class="player"
+                        :class="{ selected: index === chosenMerlin }"
+                        @click="toggleMerlinSelection(index)"
+                    >
+                        {{ player.name }}
+                    </div>
+                </div>
+                <button
+                    @click="proposeMerlinSelection"
+                    :disabled="chosenMerlin === -1"
+                >
+                    Propose Merlin
+                </button>
+                <button
+                    v-if="lovers"
+                    @click="toggleEndGameChoosing"
+                >
+                    Choose Lovers instead
+                </button>
+            </div>
+
+            <div v-if="gamePhase === 'choose-lovers'">
+                <h3>Assassin, choose Lovers:</h3>
+                <div class="players">
+                    <div
+                        v-for="(player, index) in players"
+                        v-if="player.role === 'Good Guy'"
+                        :key="index"
+                        class="player"
+                        :class="{ selected: chosenLovers.includes(index) }"
+                        @click="toggleLoversSelection(index)"
+                    >
+                        {{ player.name }}
+                    </div>
+                </div>
+                <button
+                    @click="proposeLoversSelection"
+                    :disabled="chosenLovers.length !== 2"
+                >
+                    Propose Lovers
+                </button>
+                <button
+                    @click="toggleEndGameChoosing"
+                >
+                    Choose Merlin instead
+                </button>
             </div>
 
             <div v-if="gamePhase === 'game-over'">
@@ -193,7 +244,7 @@
                     <div
                         v-for="(player, index) in players"
                     >
-                        {{ player.name}} {{player.role}} {{player.speciality}}
+                        {{ player.name}}: {{player.role}} {{player.speciality}}
                     </div>
                 </div>
                 
@@ -257,6 +308,9 @@
                         fail: 0,
                     },
                     pastMissionVotes: [],
+                    // end game choosing
+                    chosenLovers: [],
+                    chosenMerlin: -1,
                 },
                 computed: {
                     allPlayersNamed() {
@@ -267,17 +321,27 @@
                         // check if there is enough player for merlin mordred lovers
                         let enough_roles = true;
                         let special_spies = 0;
+                        let special_good = 0;
                         if (this.mordred) {
                             special_spies++;
                         };
                         if (this.merlin) {
                             special_spies++;
                             special_spies++;
+                            special_good++;
+                            special_good++;
                         };
                         if (this.oberon) {
                             special_spies++;
                         };
+                        if (this.lovers) {
+                            special_good++;
+                            special_good++;
+                        }
                         if (special_spies > this.spiesCount) {
+                            enough_roles = false;
+                        };
+                        if (special_good > this.playerCount - this.spiesCount) {
                             enough_roles = false;
                         };
                         return all_names_present && enough_roles;
@@ -502,7 +566,12 @@
                         this.missionResults[this.currentRound - 1] =
                             missionSuccess;
                         if (this.missionResults.filter(Boolean).length === 3) {
-                            this.gameOver("Good guys win!");
+                            if (this.merlin) {
+                                this.gamePhase = "choose-merlin";
+                            }
+                            else {
+                                this.gameOver("Good guys win!");
+                            }
                         } else if (
                             this.missionResults.filter(
                                 (result) => result === false,
@@ -525,6 +594,46 @@
                         this.currentRound++;
                         this.nextLeader();
                     },
+
+                    toggleEndGameChoosing(){
+                        if (this.gamePhase === "choose-merlin") {
+                            this.gamePhase = "choose-lovers";
+                            this.chosenMerlin = -1;
+                        } else {
+                            this.gamePhase = "choose-merlin";
+                            this.chosenLovers = [];
+                        }
+                    },
+                    toggleMerlinSelection(index) {
+                        this.chosenMerlin = index;
+                    },
+                    proposeMerlinSelection() {
+                        if (this.players[this.chosenMerlin].speciality !== "Merlin") {
+                            this.gameOver("Good guys win! Wrong Merlin chosen");
+                        } else {
+                            this.gameOver("Spies win! Merlin found");
+                        }
+                    },
+                    toggleLoversSelection(index) {
+                        if (this.chosenLovers.includes(index)) {
+                            this.chosenLovers = this.chosenLovers.filter(
+                                (i) => i !== index,
+                            );
+                        } else if (
+                            this.chosenLovers.length < 2
+                        ) {
+                            this.chosenLovers.push(index);
+                        }
+                    },
+                    proposeLoversSelection() {
+                        correctLoverChosen = this.players[this.chosenLovers[0]].speciality === "Lover" && this.players[this.chosenLovers[1]].speciality === "Lover";
+                        if (correctLoverChosen) {
+                            this.gameOver("Spies win! Lovers found");
+                        }
+                        else {
+                            this.gameOver("Good guys win! Wrong Lovers chosen");
+                        }
+                    },
                     gameOver(result) {
                         this.gameResult = result;
                         this.gamePhase = "game-over";
@@ -539,10 +648,11 @@
                         this.missionResults= [null, null, null, null, null];
                         this.missionPlayers= [];
                         this.currentMissionPlayerIndex= 0;
-                        this.pastMissionPlayers=[];
                         this.missionActionDone = false;
                         this.gameResult = "";
                         this.missionVotes = {success:0, fail: 0};
+                        this.chosenMerlin = -1;
+                        this.chosenLovers = [];
 
                         this.generatePlayerInputs();
                     },
@@ -551,6 +661,12 @@
                     this.generatePlayerInputs();
                 },
             });
+                window.addEventListener('beforeunload', function (e) {
+                    // Cancel the event
+                    e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+                    // Chrome requires returnValue to be set
+                    e.returnValue = '';
+                });
         </script>
     </body>
 </html>
