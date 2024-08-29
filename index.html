@@ -48,8 +48,21 @@
             }
             .mission-result-boxes {
                 display: flex;
+                justify-content: center; /* Horizontally center */
                 flex-direction: column;
                 align-items: center;
+                gap: 20px;
+            }
+            .box {
+                width: 50px;
+                height: 50px;
+                margin: 10px 0;
+            }
+            .blue {
+                background-color: lightgreen;
+            }
+            .red {
+                background-color: tomato;
             }
             button {
                 margin: 5px;
@@ -200,7 +213,6 @@
                         :class="box.color"
                         class="box"
                     >
-                        
                     </div>
                 </div>
                 <button @click="doneViewingMissionResults()">
