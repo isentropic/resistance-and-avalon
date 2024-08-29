@@ -46,6 +46,11 @@
             .mission-pass {
                 background-color: lightgreen;
             }
+            .mission-result-boxes {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
             button {
                 margin: 5px;
                 padding: 5px 10px;
@@ -180,6 +185,27 @@
                     Pass
                 </button>
                 <button @click="missionVote(currentMissionPlayer, false)">Fail</button>
+            </div>
+
+            <div v-if="gamePhase === 'mission-revealing'">
+                <button @click="revealMissionResults()">
+                    Reveal Results
+                </button>
+            </div>
+            <div v-if="gamePhase === 'mission-revealed'">
+                <div class="mission-result-boxes">
+                    <div
+                        v-for="(box, index) in boxes"
+                        :key="index"
+                        :class="box.color"
+                        class="box"
+                    >
+                        
+                    </div>
+                </div>
+                <button @click="doneViewingMissionResults()">
+                    Done!
+                </button>
             </div>
 
             <div v-if="gamePhase === 'choose-merlin'">
@@ -353,6 +379,11 @@
                         return this.missionPlayers[
                             this.currentMissionPlayerIndex
                         ];
+                    },
+                    boxes() {
+                        const blueBoxes = Array(this.missionVotes.success).fill({ color: 'blue' });
+                        const redBoxes = Array(this.missionVotes.fail).fill({ color: 'red' });
+                        return [...redBoxes, ...blueBoxes];
                     },
                 },
                 methods: {
@@ -579,8 +610,14 @@
                         ) {
                             this.gameOver("Spies win!");
                         } else {
-                            this.nextRound();
+                            this.gamePhase = "mission-revealing";
                         }
+                    },
+                    revealMissionResults() {
+                        this.gamePhase = "mission-revealed";
+                    },
+                    doneViewingMissionResults() {
+                        this.nextRound();
                     },
                     nextLeader() {
                         this.currentLeader =
