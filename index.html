@@ -34,9 +34,9 @@
                 /* background-color: lightcoral; */
                 justify-content: center; /* Horizontally center */
                 align-items: center; /* Vertically center */
-                border: 3px solid #ccc;
+                /* border: 3px solid #ccc; */
                 text-align: center;
-                font-size: 24px;
+                font-size: 20px;
             }
             .mission-pending {
                 background-color: lightgray;
@@ -182,9 +182,21 @@
                 <button @click="missionVote(currentMissionPlayer, false)">Fail</button>
             </div>
 
+            <div v-if="gamePhase === 'choose-merlin'">
+                <button @click="resetGame">Play Again</button>
+            </div>
+
             <div v-if="gamePhase === 'game-over'">
-                <h2>Game Over</h2>
-                <p>{{ gameResult }}</p>
+                <h1>{{ gameResult }}</h1>
+                <!-- display all roles -->
+                <div class="players">
+                    <div
+                        v-for="(player, index) in players"
+                    >
+                        {{ player.name}} {{player.role}} {{player.speciality}}
+                    </div>
+                </div>
+                
                 <button @click="resetGame">Play Again</button>
             </div>
 
@@ -201,7 +213,12 @@
                         }"
                         class="mission"
                     >
-                        <strong>{{missionSizes[index]}} </strong>  <strong> {{ ((index === 3) && forthSpecialRound) ? "*" : ""}}</strong>
+                        <div v-if="result !== null">
+                            <strong>{{ pastMissionVotes[index].success }}/{{missionSizes[index]}} {{ ((index === 3) && forthSpecialRound) ? "*" : ""}}</strong>
+                        </div>
+                        <div v-else>
+                            <strong>{{missionSizes[index]}}{{ ((index === 3) && forthSpecialRound) ? "*" : ""}}</strong>
+                        </div>
                     </div>
                 </div>
                 <h3>Consecutive Rejections: {{ consecutiveRejections }} / {{ maxConsecutiveRejections }}</h3>
@@ -392,7 +409,6 @@
                         let visibleSpies = this.players.filter(player => player.role === "Spy" && player !== this.currentPlayer && (player.speciality !== "Mordred" || player.speciality !== "Oberon"));
                         let merlinAndMorgana = this.players.filter(player => player.speciality === "Merlin" || player.speciality === "Morgana");
                         let otherLover = this.players.filter(player => player.speciality === "Lover" && player !== this.currentPlayer);
-                        
                         let displayRole = this.currentPlayer.speciality === "" ? this.currentPlayer.role : this.currentPlayer.speciality;
                         let roleHint = "Your role is: <strong>" + displayRole + "</strong>";
 
@@ -486,7 +502,7 @@
                         this.missionResults[this.currentRound - 1] =
                             missionSuccess;
                         if (this.missionResults.filter(Boolean).length === 3) {
-                            this.gameOver("Good guys wins!");
+                            this.gameOver("Good guys win!");
                         } else if (
                             this.missionResults.filter(
                                 (result) => result === false,
@@ -527,7 +543,6 @@
                         this.missionActionDone = false;
                         this.gameResult = "";
                         this.missionVotes = {success:0, fail: 0};
-                        this.pastMissionVotes = []
 
                         this.generatePlayerInputs();
                     },
