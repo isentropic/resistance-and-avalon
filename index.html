@@ -28,6 +28,13 @@
                 background-color: #fff;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
+            .private-role-reveal {
+                padding: 20px;
+                max-width: 600px;
+                line-height: 1.6;
+                font-size: 1em;
+                height: 150px; /* Set a fixed height */
+            }
             .players-role-revealed {
                 background-color: #fff;
                 padding: 20px;
@@ -53,12 +60,9 @@
             }
             .mission {
                 display: flex;
-                width: 80px;
-                height: 80px;
                 justify-content: center;
                 align-items: center;
                 text-align: center;
-                font-size: 16px;
                 margin: 5px;
                 border-radius: 5px;
             }
@@ -137,13 +141,13 @@
             }
             @media (max-width: 600px) {
                 .mission {
-                    width: 60px;
-                    height: 60px;
+                    width: 50px;
+                    height: 50px;
                     font-size: 14px;
                 }
                 .box {
-                    width: 30px;
-                    height: 30px;
+                    width: 60px;
+                    height: 60px;
                 }
                 button {
                     padding: 8px 16px;
@@ -218,10 +222,12 @@
                     <h2>
                         {{ currentPlayer.name }}
                     </h2>
+                    <div class="private-role-reveal">
                     <p v-if="!roleRevealed">
                         Click the button when you're ready to see your role
                     </p>
                     <p v-if="roleRevealed" v-html="roleHint"></p>
+                    </div>
 
                 <div class="button-container">
                     <button v-if="!roleRevealed" @click="revealRole">
@@ -305,9 +311,9 @@
                     </div>
                 </div>
                 <div class="button-container">
-                <button @click="doneViewingMissionResults()">
-                    Done!
-                </button>
+                    <button @click="doneViewingMissionResults()">
+                        Done!
+                    </button>
                 </div>
             </div>
 
