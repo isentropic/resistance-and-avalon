@@ -328,6 +328,7 @@ const app = createApp({
             missionResults.value[currentRound.value - 1] = missionSuccess;
             if (missionResults.value.filter(Boolean).length === 3) {
                 if (merlin.value) {
+                    console.log("Choosing merlin by assassin!");
                     gamePhase.value = "choose-merlin";
                 } else {
                     gameOver("Good guys win!");
