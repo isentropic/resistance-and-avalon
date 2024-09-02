@@ -5,65 +5,29 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>The Resistance</title>
         <link rel="stylesheet" href="styles.css">
-        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-        <script src="app.js" defer></script>
+        <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js" defer></script> -->
+        <script type="module" src="./app.js" defer></script>
     </head>
     <body>
         <div id="app">
             <h1>The Resistance</h1>
 
-            <div v-if="gamePhase === 'setup'">
-                <h2>Game Setup</h2>
-                <label
-                    >Number of Players:
-                    <input
-                        v-model.number="playerCount"
-                        type="number"
-                        min="5"
-                        max="10"
-                        @change="generatePlayerInputs"
-                    />
-                </label>
-                <div
-                    v-for="(player, index) in players"
-                    :key="index"
-                    class="input-group"
-                >
-                    <label
-                        >Player {{ index + 1 }} Name:
-                        <input
-                            v-model="player.name"
-                            type="text"
-                            :placeholder="'Player ' + (index + 1)"
-                        />
-                    </label>
-                </div>
-                <!-- special roles: merlin, mordred, lovers, checkboxes -->
-                <div class="checkboxes-container">
-                    <label>
-                        <input type="checkbox" v-model="merlin" />
-                        Merlin, Percival, Morgana
-                    </label>
-                    <label>
-                        <input type="checkbox" v-model="mordred" />
-                        Mordred
-                    </label>
-                    <label>
-                        <input type="checkbox" v-model="lovers" />
-                        Lovers
-                    </label>
-                    <label>
-                        <input type="checkbox" v-model="oberon" />
-                        Oberon
-                    </label>
-                </div>
-
-                <div class="button-container">
-                    <button @click="startRoleReveal" :disabled="!allPlayersNamed">
-                    Start Role Reveal
-                </button>
-                </div>
-            </div>
+            <game-setup v-if="gamePhase === 'setup'"
+                :players="players"
+                :player-count="playerCount"
+                :merlin="merlin"
+                :mordred="mordred"
+                :lovers="lovers"
+                :oberon="oberon"
+                :all-players-named="allPlayersNamed"
+                @generate-player-inputs="generatePlayerInputs"
+                @start-role-reveal="startRoleReveal"
+                @update-player-count="playerCount = $event"
+                @update-merlin="merlin = $event"
+                @update-mordred="mordred = $event"
+                @update-lovers="lovers = $event"
+                @update-oberon="oberon = $event">
+            </game-setup>
 
             <div v-if="gamePhase === 'role-reveal'">
                 <div class="role-reveal">
@@ -234,7 +198,6 @@
                         {{ player.name}}: {{player.role}} {{player.speciality}}
                     </div>
                 </div>
-                
                 <div class="button-container">
                 <button @click="resetGame">Play Again</button>
                 </div>
@@ -265,5 +228,44 @@
             </div>
         </div>
 
+        <script type="text/x-template" id="game-setup-template">
+        <div>
+        <h2>Game Setup</h2>
+        <label>
+        Number of Players:
+        <input
+        v-model.number="localPlayerCount"
+        type="number"
+        min="5"
+        max="10"
+        @change="generatePlayerInputs"
+        />
+        </label>
+        <div v-for="(player, index) in players" :key="index" class="input-group">
+        <label>
+        Player {{ index + 1 }} Name:
+        <input v-model="player.name" type="text" :placeholder="'Player ' + (index + 1)" />
+        </label>
+        </div>
+        <!-- Special Roles: Merlin, Mordred, Lovers, Checkboxes -->
+        <div class="checkboxes-container">
+        <label>
+        <input type="checkbox" v-model="localMerlin" /> Merlin, Percival, Morgana
+        </label>
+        <label>
+        <input type="checkbox" v-model="localMordred" /> Mordred
+        </label>
+        <label>
+        <input type="checkbox" v-model="localLovers" /> Lovers
+        </label>
+        <label>
+        <input type="checkbox" v-model="localOberon" /> Oberon
+        </label>
+        </div>
+        <div class="button-container">
+        <button @click="startRoleReveal" :disabled="!allPlayersNamed">Start Role Reveal</button>
+        </div>
+        </div>
+        </script>
     </body>
 </html>
