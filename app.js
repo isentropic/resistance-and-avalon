@@ -180,6 +180,13 @@ const app = createApp({
             forthSpecialRound.value = specialRounds[num_players];
         };
 
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
         const startRoleReveal = () => {
             let spyCount = spiesCount.value;
             let goodGuyCount = playerCount.value - spyCount;
@@ -216,7 +223,8 @@ const app = createApp({
                 roles.push({ role: "Good Guy", speciality: "" });
             }
 
-            roles = roles.sort(() => Math.random() - 0.5);  // shuffle
+            
+            roles = shuffleArray(roles);  // shuffle the roles array
 
             players.value.forEach((player, index) => {
                 player.role = roles[index].role;
@@ -330,6 +338,7 @@ const app = createApp({
                 if (merlin.value) {
                     console.log("Choosing merlin by assassin!");
                     gamePhase.value = "choose-merlin";
+                    console.log(gamePhase.value);
                 } else {
                     gameOver("Good guys win!");
                 }
@@ -406,19 +415,41 @@ const app = createApp({
             gamePhase.value = "game-over";
         };
 
+        const resetPlayerRoles = () => {
+            players.value.forEach(player => {
+                player.role = "";
+                player.speciality = "";
+            });
+        }
+
         const resetGame = () => {
             gamePhase.value = "setup";
-            consecutiveRejections.value = 0;
+            playerCount.value = 5;
+            spiesCount.value = 2;
+            // merlin.value = false;
+            // mordred.value = false;
+            // lovers.value = false;
+            // oberon.value = false;
+            // forthSpecialRound.value = false;
+            // players.value = []; // {name: "player", role: "Spy", subrole: "Merlin"}
+            resetPlayerRoles();
+            roleHint.value = "";
+            currentPlayerIndex.value = 0;
+            roleRevealed.value = false;
+            currentLeader.value = 0;
             currentRound.value = 1;
-            pastMissionPlayers.value = [];
-            pastMissionVotes.value = [];
+            consecutiveRejections.value = 0;
+            maxConsecutiveRejections.value = 5;
+            // missionSizes.value = [2, 3, 2, 3, 3]; // for 5 players
             missionResults.value = [null, null, null, null, null];
-            missionPlayers.value = [];
+            missionPlayers.value = []; // current mission players
+            missionVotes.value = { success: 0, fail: 0 }; 
+            pastMissionVotes.value = []; 
+            pastMissionPlayers.value = [];
             currentMissionPlayerIndex.value = 0;
-            gameResult.value = "";
-            missionVotes.value = { success: 0, fail: 0 };
             chosenMerlin.value = -1;
-            chosenLovers.value = [];
+            chosenLovers.value = -1;
+            gameResult.value = "";
 
             generatePlayerInputs();
         };

@@ -132,16 +132,19 @@
             <div v-if="gamePhase === 'choose-merlin'">
                 <h3>Assassin, choose Merlin:</h3>
                 <div class="players">
-                    <div
+                    <template 
                         v-for="(player, index) in players"
-                        v-if="player.role === 'Good Guy'"
                         :key="index"
-                        class="player"
-                        :class="{ selected: index === chosenMerlin }"
-                        @click="toggleMerlinSelection(index)"
                     >
-                        {{ player.name }}
-                    </div>
+                        <div
+                            v-if="player.role === 'Good Guy'"
+                            class="player"
+                            :class="{ selected: index === chosenMerlin }"
+                            @click="toggleMerlinSelection(index)"
+                        >
+                            {{ player.name }}
+                        </div>
+                    </template>
                 </div>
                 <div class="button-container">
                     <button
@@ -162,16 +165,19 @@
             <div v-if="gamePhase === 'choose-lovers'">
                 <h3>Assassin, choose Lovers:</h3>
                 <div class="players">
-                    <div
+                    <template 
                         v-for="(player, index) in players"
-                        v-if="player.role === 'Good Guy'"
                         :key="index"
+                    >
+                    <div
+                        v-if="player.role === 'Good Guy'"
                         class="player"
                         :class="{ selected: chosenLovers.includes(index) }"
                         @click="toggleLoversSelection(index)"
                     >
                         {{ player.name }}
                     </div>
+                    </template>
                 </div>
                 <div class="button-container">
                     <button
