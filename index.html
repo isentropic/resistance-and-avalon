@@ -98,11 +98,26 @@
                     {{ players[missionPlayers[currentMissionPlayerIndex]].name }}, It's your turn:
                 </h2>
                 <div class="button-container">
-                <button @click="missionVote(currentMissionPlayer, true)">
-                    Pass
-                </button>
-                <button @click="missionVote(currentMissionPlayer, false)">Fail</button>
+                    <button @click="missionVote(currentMissionPlayer, true)">
+                        Pass
+                    </button>
+                    <button @click="missionVote(currentMissionPlayer, false)">Fail</button>
+                </div>
             </div>
+            <div v-if="gamePhase === 'pass-to-next-mission-player'">
+                <h2>Mission {{ currentRound }}</h2>
+                <p>
+                    Team: {{ missionPlayers.map(i => players[i].name).join(', ')
+                    }}
+                </p>
+                <h2>
+                    Pass the phone to <strong> {{ players[missionPlayers[currentMissionPlayerIndex]].name }} </strong>
+                </h2>
+                <div class="button-container">
+                    <button @click="continueMission()">
+                        I am {{ players[missionPlayers[currentMissionPlayerIndex]].name }}
+                    </button>
+                </div>
             </div>
 
             <div v-if="gamePhase === 'mission-revealing'">
@@ -121,11 +136,11 @@
                         class="box"
                     >
                     </div>
-                </div>
                 <div class="button-container">
                     <button @click="doneViewingMissionResults()">
                         Done!
                     </button>
+                </div>
                 </div>
             </div>
 

@@ -321,7 +321,11 @@ const app = createApp({
                 resolveMission();
             } else {
                 currentMissionPlayerIndex.value++;
+                gamePhase.value = 'pass-to-next-mission-player'
             }
+        };
+        const continueMission = () => {
+            gamePhase.value = 'mission'
         };
 
         const resolveMission = () => {
@@ -334,21 +338,27 @@ const app = createApp({
 
             currentMissionPlayerIndex.value = 0;
             missionResults.value[currentRound.value - 1] = missionSuccess;
+
+            gamePhase.value = "mission-revealing";
+        };
+
+        const maybeGameFinished = () => {
+            console.log("maybe game finishes?");
+            console.log(missionResults);
+            if (missionResults.value.filter(result => result === false).length === 3) {
+                gameOver("Spies win!");
+                return true;
+            }
             if (missionResults.value.filter(Boolean).length === 3) {
                 if (merlin.value) {
-                    console.log("Choosing merlin by assassin!");
                     gamePhase.value = "choose-merlin";
-                    console.log(gamePhase.value);
+                    return true;
                 } else {
                     gameOver("Good guys win!");
+                    return true;
                 }
-            } else if (
-                missionResults.value.filter(result => result === false).length === 3
-            ) {
-                gameOver("Spies win!");
-            } else {
-                gamePhase.value = "mission-revealing";
             }
+            return false;
         };
 
         const revealMissionResults = () => {
@@ -356,7 +366,10 @@ const app = createApp({
         };
 
         const doneViewingMissionResults = () => {
-            nextRound();
+            let finished = maybeGameFinished();
+            if (!finished) {
+                nextRound();
+            }
         };
 
         const nextLeader = () => {
@@ -474,6 +487,7 @@ const app = createApp({
             missionSizes,
             missionResults,
             missionPlayers,
+            continueMission,
             currentMissionPlayerIndex,
             pastMissionPlayers,
             gameResult,
