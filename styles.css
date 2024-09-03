@@ -116,6 +116,32 @@ button:disabled {
     flex-direction: column;
     align-items: center;
 }
+.corner-badge {
+    position: absolute;
+    top: 10px;
+    display: inline-block;
+    color: #fff;
+    background-color: #24292e;
+    border-radius: 50%;
+    padding: 5px;
+    text-decoration: none;
+}
+
+.corner-badge svg {
+    fill: white;
+    vertical-align: middle;
+}
+
+.corner-badge:hover {
+    background-color: #444;
+}
+
+.corner-badge.left {
+    left: 10px;
+}
+.corner-badge.right {
+    right: 10px;
+}
 input[type="number"], input[type="text"] {
     padding: 10px;
     font-size: 16px;
