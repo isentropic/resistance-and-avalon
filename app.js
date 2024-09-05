@@ -475,7 +475,7 @@ const app = createApp({
             pastMissionPlayers.value = [];
             currentMissionPlayerIndex.value = 0;
             chosenMerlin.value = -1;
-            chosenLovers.value = -1;
+            chosenLovers.value = [];
             gameResult.value = "";
 
             generatePlayerInputs();
