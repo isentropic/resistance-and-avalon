@@ -184,14 +184,14 @@
                         v-for="(player, index) in players"
                         :key="index"
                     >
-                    <div
-                        v-if="player.role === 'Good Guy'"
-                        class="player"
-                        :class="{ selected: chosenLovers.includes(index) }"
-                        @click="toggleLoversSelection(index)"
-                    >
-                        {{ player.name }}
-                    </div>
+                        <div
+                            v-if="player.role === 'Good Guy'"
+                            class="player"
+                            :class="{ selected: chosenLovers.includes(index) }"
+                            @click="toggleLoversSelection(index)"
+                        >
+                            {{ player.name }}
+                        </div>
                     </template>
                 </div>
                 <div class="button-container">
@@ -202,6 +202,7 @@
                         Propose Lovers
                     </button>
                     <button
+                        v-if="merlin"
                         @click="toggleEndGameChoosing"
                     >
                         Choose Merlin instead

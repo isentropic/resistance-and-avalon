@@ -4,6 +4,15 @@ import { createApp, ref, watch, computed } from 'https://unpkg.com/vue@3/dist/vu
 const gameSetup = {
     template: '#game-setup-template',
     props: ['players', 'playerCount', 'merlin', 'mordred', 'lovers', 'oberon', 'allPlayersNamed'],
+    emits: [
+        'update-player-count',
+        'update-merlin',
+        'update-mordred',
+        'update-lovers',
+        'update-oberon',
+        'generate-player-inputs',
+        'start-role-reveal',
+    ],
     setup(props, { emit }) {
         const localPlayerCount = ref(props.playerCount);
         const localMerlin = ref(props.merlin);
@@ -83,7 +92,7 @@ const app = createApp({
         const pastMissionPlayers = ref([]);
         const currentMissionPlayerIndex = ref(0);
         const chosenMerlin = ref(-1);
-        const chosenLovers = ref(-1);
+        const chosenLovers = ref([]);
         const gameResult = ref("");
 
         const allPlayersNamed = computed(() => {
@@ -353,7 +362,12 @@ const app = createApp({
                 if (merlin.value) {
                     gamePhase.value = "choose-merlin";
                     return true;
-                } else {
+                } 
+                else if (lovers.value) {
+                    gamePhase.value = "choose-lovers";
+                    return true;
+                }
+                else {
                     gameOver("Good guys win!");
                     return true;
                 }
