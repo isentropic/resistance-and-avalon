@@ -1,70 +1,5 @@
 import { createApp, ref, watch, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
-// Define the game-setup component
-const gameSetup = {
-    template: '#game-setup-template',
-    props: ['players', 'playerCount', 'merlin', 'mordred', 'lovers', 'oberon', 'allPlayersNamed'],
-    emits: [
-        'update-player-count',
-        'update-merlin',
-        'update-mordred',
-        'update-lovers',
-        'update-oberon',
-        'generate-player-inputs',
-        'start-role-reveal',
-    ],
-    setup(props, { emit }) {
-        const localPlayerCount = ref(props.playerCount);
-        const localMerlin = ref(props.merlin);
-        const localMordred = ref(props.mordred);
-        const localLovers = ref(props.lovers);
-        const localOberon = ref(props.oberon);
-
-        watch(localPlayerCount, (newVal) => {
-            emit('update-player-count', newVal);
-        });
-
-        watch(localMerlin, (newVal) => {
-            emit('update-merlin', newVal);
-        });
-
-        watch(localMordred, (newVal) => {
-            emit('update-mordred', newVal);
-        });
-
-        watch(localLovers, (newVal) => {
-            emit('update-lovers', newVal);
-        });
-
-        watch(localOberon, (newVal) => {
-            emit('update-oberon', newVal);
-        });
-
-        const generatePlayerInputs = () => {
-            emit('generate-player-inputs', localPlayerCount.value);
-        };
-
-        const startRoleReveal = () => {
-            emit('start-role-reveal', {
-                merlin: localMerlin.value,
-                mordred: localMordred.value,
-                lovers: localLovers.value,
-                oberon: localOberon.value,
-            });
-        };
-
-        return {
-            localPlayerCount,
-            localMerlin,
-            localMordred,
-            localLovers,
-            localOberon,
-            generatePlayerInputs,
-            startRoleReveal,
-        };
-    },
-};
-
 // Create Vue app
 const app = createApp({
     setup() {
@@ -137,21 +72,29 @@ const app = createApp({
         });
 
         const generatePlayerInputs = () => {
-            if (players.length === playerCount.value) {
-                players.value = Array(playerCount.value)
-                    .fill()
-                    .map((_, i) => ({
-                        name: `${players[i].name}`,
-                        role: "",
-                    }));
-            } else {
+            // if players is empty
+            if (players.value.length === 0) {
                 players.value = Array(playerCount.value)
                     .fill()
                     .map((_, i) => ({
                         name: `Player ${i + 1}`,
                         role: "",
+                        speciality: "",
                     }));
+            } // else adjust current player accordingto playerCount
+            else if (players.value.length < playerCount.value) {
+                let newPlayers = Array(playerCount.value - players.value.length)
+                    .fill()
+                    .map((_, i) => ({
+                        name: `Player ${players.value.length + i + 1}`,
+                        role: "",
+                        speciality: "",
+                    }));
+                players.value = [...players.value, ...newPlayers];
+            } else if (players.value.length > playerCount.value) {
+                players.value = players.value.slice(0, playerCount.value);
             }
+
             setMissionSizes();
         };
 
@@ -444,15 +387,18 @@ const app = createApp({
 
         const resetPlayerRoles = () => {
             players.value.forEach(player => {
+                player.name = player.name;
                 player.role = "";
                 player.speciality = "";
             });
+            console.log("Reseting game...")
+            console.log(players)
         }
 
         const resetGame = () => {
             gamePhase.value = "setup";
-            playerCount.value = 5;
-            spiesCount.value = 2;
+            // playerCount.value = 5;
+            // spiesCount.value = 2;
             // merlin.value = false;
             // mordred.value = false;
             // lovers.value = false;
@@ -544,7 +490,7 @@ const app = createApp({
 });
 
 // Register components and mount app
-app.component('game-setup', gameSetup);
+// app.component('game-setup', gameSetup);
 app.mount("#app");
 
 // Add beforeunload event
