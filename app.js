@@ -87,7 +87,7 @@ const app = createApp({
                 let newPlayers = Array(playerCount.value - players.value.length)
                     .fill()
                     .map((_, i) => ({
-                        name: `Player ${players.value.length + i + 1}`,
+                        name: "",
                         role: "",
                         speciality: "",
                     }));
