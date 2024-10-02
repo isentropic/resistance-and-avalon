@@ -34,6 +34,7 @@ const app = createApp({
             let all_names_present = players.value.every(
                 (player) => player.name.trim() !== ""
             );
+            let all_names_unique = new Set(players.value.map(player => player.name)).size === players.value.length;
 
             let enough_roles = true;
             let special_spies = 0;
@@ -60,7 +61,7 @@ const app = createApp({
             if (special_good > playerCount.value - spiesCount.value) {
                 enough_roles = false;
             }
-            return all_names_present && enough_roles;
+            return all_names_present && enough_roles && all_names_unique;
         });
 
         const currentPlayer = computed(() => players.value[currentPlayerIndex.value]);
@@ -77,7 +78,7 @@ const app = createApp({
                 players.value = Array(playerCount.value)
                     .fill()
                     .map((_, i) => ({
-                        name: `Player ${i + 1}`,
+                        name: "",
                         role: "",
                         speciality: "",
                     }));
@@ -496,5 +497,5 @@ app.mount("#app");
 // Add beforeunload event
 window.addEventListener('beforeunload', function (e) {
     e.preventDefault();
-    e.returnValue = '';
+    e.returnValue = 'Are you sure you want to leave?';
 });
