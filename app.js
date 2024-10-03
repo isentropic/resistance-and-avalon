@@ -69,7 +69,7 @@ const app = createApp({
         const boxes = computed(() => {
             const blueBoxes = Array(missionVotes.value.success).fill({ color: 'blue' });
             const redBoxes = Array(missionVotes.value.fail).fill({ color: 'red' });
-            return [...redBoxes, ...blueBoxes];
+            return [...blueBoxes, ...redBoxes];
         });
 
         const generatePlayerInputs = () => {
