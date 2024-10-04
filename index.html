@@ -187,19 +187,20 @@
             </div>
             </div>
             <div v-if="gamePhase === 'mission-revealed'">
-                <div class="mission-result-boxes">
-                    <div
-                        v-for="(box, index) in boxes"
-                        :key="index"
-                        :class="box.color"
-                        class="box"
-                    >
-                    </div>
-                </div>
                 <div class="button-container">
-                    <button @click="doneViewingMissionResults()">
+                    <button @click="doneViewingMissionResults()" :disabled="!allRevealed">
                         Done!
                     </button>
+                </div>
+                <div class="mission-result-boxes">
+                    <template 
+                        v-for="(box, index) in boxes"
+                        :key="index"
+                    >
+                        <div :class="box.color" class="box" v-if="index <
+                            visibleCount">
+                        </div>
+                    </template>
                 </div>
             </div>
 

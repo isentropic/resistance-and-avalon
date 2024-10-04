@@ -8,34 +8,37 @@ body {
     max-width: 100vw;
     flex-direction: column;
     align-items: center;
-    background-color: #f0f0f0;
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text color */
     user-select: none; /* for non-webkit browsers */
     moz-user-select: none;
     webkit-user-select: none;
 }
 h1, h2, h3 {
     text-align: center;
+    color: #e0e0e0; /* Light text color */
 }
 .player {
     margin: 10px;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #444; /* Darker border */
     cursor: pointer;
     border-radius: 5px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #1e1e1e; /* Dark background */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Darker shadow */
 }
 .players-role-revealed {
-    background-color: #fff;
+    background-color: #1e1e1e; /* Dark background */
     padding: 20px;
     border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Darker shadow */
     max-width: 600px;
     line-height: 1.6;
     font-size: 1em;
+    color: #e0e0e0; /* Light text color */
 }
 .player.selected {
-    background-color: #e0e0e0;
+    background-color: #333; /* Slightly lighter dark background */
 }
 .checkboxes-container {
     display: flex;
@@ -60,13 +63,13 @@ h1, h2, h3 {
     border-radius: 2vmin;
 }
 .mission-pending {
-    background-color: lightgray;
+    background-color: #444; /* Darker gray */
 }
 .mission-fail {
-    background-color: tomato; 
+    background-color: #d32f2f; /* Darker red */
 }
 .mission-pass {
-    background-color: lightgreen;
+    background-color: #388e3c; /* Darker green */
 }
 .mission-result-boxes {
     display: flex;
@@ -82,10 +85,10 @@ h1, h2, h3 {
     border-radius: 5px;
 }
 .blue {
-    background-color: lightgreen;
+    background-color: #388e3c; /* Darker green */
 }
 .red {
-    background-color: tomato;
+    background-color: #d32f2f; /* Darker red */
 }
 .button-container {
     display: flex;
@@ -103,16 +106,17 @@ button {
     background-color: #6c757d; /* neutral color */
     color: white;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Darker shadow */
 }
 button:disabled {
-    background-color: #ccc;
+    background-color: #555; /* Darker disabled color */
     cursor: not-allowed;
 }
 .role-reveal {
     text-align: center;
     font-size: 24px;
     margin: 20px 0;
+    color: #e0e0e0; /* Light text color */
 }
 .input-group {
     margin-top: 10px;
@@ -150,13 +154,16 @@ button:disabled {
 input[type="number"], input[type="text"] {
     padding: 10px;
     font-size: 16px;
-    border: 1px solid #ccc;
+    border: 1px solid #444; /* Darker border */
     border-radius: 5px;
     margin-top: 5px;
+    background-color: #1e1e1e; /* Dark background */
+    color: #e0e0e0; /* Light text color */
 }
 label {
     font-size: 16px;
     margin-bottom: 5px;
+    color: #e0e0e0; /* Light text color */
 }
 @media (max-width: 600px) {
     .mission {

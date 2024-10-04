@@ -72,6 +72,21 @@ const app = createApp({
             return [...blueBoxes, ...redBoxes];
         });
 
+        const visibleCount = ref(0);
+        let intervalId = null;
+        const revealItems = () => {
+          if (intervalId) return; // Prevent multiple intervals
+          intervalId = setInterval(() => {
+            if (visibleCount.value < boxes.value.length) {
+              visibleCount.value++;
+            } else {
+              clearInterval(intervalId);
+              intervalId = null;
+            }
+          }, 1000); // Adjust the interval time as needed
+        };
+        const allRevealed = computed(() => visibleCount.value >= boxes.value.length);
+
         const generatePlayerInputs = () => {
             // if players is empty
             if (players.value.length === 0) {
@@ -321,9 +336,14 @@ const app = createApp({
 
         const revealMissionResults = () => {
             gamePhase.value = "mission-revealed";
+            revealItems();
         };
 
         const doneViewingMissionResults = () => {
+            visibleCount.value = 0;
+            clearInterval(intervalId);
+            intervalId = null;
+
             let finished = maybeGameFinished();
             if (!finished) {
                 nextRound();
@@ -460,6 +480,9 @@ const app = createApp({
             currentPlayer,
             currentMissionPlayer,
             boxes,
+            visibleCount,
+            revealItems,
+            allRevealed,
             generatePlayerInputs,
             setMissionSizes,
             startRoleReveal,
