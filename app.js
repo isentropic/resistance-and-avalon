@@ -1,5 +1,40 @@
 import { createApp, ref, watch, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+import {DateTime} from 'https://cdn.jsdelivr.net/npm/luxon@3.5.0/+esm'
 
+const supabaseUrl = 'https://aoehzrooxxwoaskyzqcr.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZWh6cm9veHh3b2Fza3l6cWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjk3NTQyMjUsImV4cCI6MjA0NTMzMDIyNX0.l5SvNooCHyNTBYjKLXcrBAwyUxdSZNGKnqtE_zPW7Vo';
+const bucketName = 'resistance-logs'
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+function uploadDataToSupabase(serializedData) {
+  fetch("https://api.ipify.org?format=json")
+    .then((response) => response.json())
+    .then((userData) => {
+      const ipAddress = userData.ip;
+      const dataWithIp = {
+        serializedData,
+        ipAddress
+      };
+
+      const timestamp = DateTime.local().toFormat('yyyyMMdd_HHmmss');
+      const filename = `${timestamp}_${ipAddress}.json`;
+      const { data, error } = supabase.storage
+        .from(bucketName)
+        .upload(filename, JSON.stringify(dataWithIp), {
+          contentType: 'application/json',
+        });
+
+      if (error) {
+        console.error('Error uploading data:', error);
+      } else {
+        console.log('Data uploaded successfully!');
+      }
+    })
+    .catch((error) => {
+      console.error('Error retrieving IP address:', error);
+    });
+}
 // Create Vue app
 const app = createApp({
     setup() {
@@ -29,6 +64,7 @@ const app = createApp({
         const chosenMerlin = ref(-1);
         const chosenLovers = ref([]);
         const gameResult = ref("");
+        const ignoreDataRecording = ref(false);
 
         const allPlayersNamed = computed(() => {
             let all_names_present = players.value.every(
@@ -417,6 +453,33 @@ const app = createApp({
         }
 
         const resetGame = () => {
+            const serializedData = JSON.stringify({
+                playerCount: playerCount.value,
+                spiesCount: spiesCount.value,
+                merlin: merlin.value,
+                mordred: mordred.value,
+                lovers: lovers.value,
+                oberon: oberon.value,
+                forthSpecialRound: forthSpecialRound.value,
+                players: players.value,
+                missionSizes: missionSizes.value,
+                missionResults: missionResults.value,
+                missionPlayers: missionPlayers.value,
+                missionVotes: missionVotes.value,
+                players: players.value,
+                pastMissionVotes: pastMissionVotes.value,
+                pastMissionPlayers: pastMissionPlayers.value,
+                chosenMerlin: chosenMerlin.value,
+                chosenLovers: chosenLovers.value,
+                gameResult: gameResult.value,
+            });
+
+            if (ignoreDataRecording.value === false) {
+                uploadDataToSupabase(serializedData);
+            }
+
+    
+
             gamePhase.value = "setup";
             // playerCount.value = 5;
             // spiesCount.value = 2;
@@ -506,6 +569,7 @@ const app = createApp({
             proposeLoversSelection,
             gameOver,
             resetGame,
+            ignoreDataRecording,
         };
     },
     mounted() {
