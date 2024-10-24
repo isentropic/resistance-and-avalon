@@ -453,7 +453,7 @@ const app = createApp({
         }
 
         const resetGame = () => {
-            const serializedData = JSON.stringify({
+            const serializedData = {
                 playerCount: playerCount.value,
                 spiesCount: spiesCount.value,
                 merlin: merlin.value,
@@ -472,7 +472,7 @@ const app = createApp({
                 chosenMerlin: chosenMerlin.value,
                 chosenLovers: chosenLovers.value,
                 gameResult: gameResult.value,
-            });
+            };
 
             if (ignoreDataRecording.value === false) {
                 uploadDataToSupabase(serializedData);
